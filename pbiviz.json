@@ -1,0 +1,23 @@
+{
+  "visual": {
+    "name": "cartao",
+    "displayName": "Cartão Lista (não interativo)",
+    "guid": "cartaoListCard12345A",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "Lista de textos com quebra de linha, cópia via botão direito e sem cliques de filtro.",
+    "supportUrl": "www.planejamento.gov.bt",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "5.11.0",
+  "author": {
+    "name": "SPLA",
+    "email": "spla@planejamento.gov.br"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "stringResources": []
+}

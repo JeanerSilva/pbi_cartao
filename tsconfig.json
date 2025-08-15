@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "commonjs",
+    "outDir": "./.tmp/build",
+    "allowJs": false,
+    "sourceMap": true,
+    "declaration": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "lib": [
+      "ES6",
+      "DOM"
+    ],
+    "strict": true,
+    "noImplicitAny": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "files": [
+    "src/visual.ts",
+    "src/settings.ts"
+  ]
+}

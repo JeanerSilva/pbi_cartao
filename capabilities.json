@@ -1,0 +1,92 @@
+{
+  "privileges": [],
+
+  "dataRoles": [
+    {
+      "name": "item",
+      "kind": "Grouping",
+      "displayName": "Itens"
+    }
+  ],
+ "dataViewMappings": [
+  {
+    "categorical": {
+      "categories": {
+        "for": { "in": "item" },
+        "dataReductionAlgorithm": { "window": { "count": 10000 } }
+      }
+    }
+  }
+]
+    ,
+  "suppressDefaultTitle": true,
+  "objects": {
+    "text": {
+      "displayName": "Texto",
+      "properties": {
+        "fontSize": {
+          "displayName": "Tamanho da fonte",
+          "type": {
+            "formatting": {
+              "fontSize": true
+            }
+          }
+        },
+        "color": {
+          "displayName": "Cor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontFamily": {
+          "displayName": "Fonte",
+          "type": {
+            "text": true
+          }
+        },
+        "align": {
+          "displayName": "Alinhamento",
+          "type": { "formatting": { "alignment": true } }
+        }
+
+      }
+    },
+    "layout": {
+      "displayName": "Layout",
+      "properties": {
+        "padding": {
+          "displayName": "Padding",
+          "type": {
+            "numeric": true
+          }
+        },
+        "itemSpacing": {
+          "displayName": "Espaçamento entre itens",
+          "type": {
+            "numeric": true
+          }
+        },
+        "showBorder": {
+          "displayName": "Borda",
+          "type": {
+            "bool": true
+          }
+        },
+        "borderColor": {
+          "displayName": "Cor da borda",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

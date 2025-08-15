@@ -1,0 +1,82 @@
+
+  @item-border: 1px solid transparent;
+
+.cv-root {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;   // barra de rolagem vertical
+  overflow-x: hidden; // evita barra horizontal
+  padding: 8px;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  cursor: text;
+  white-space: normal;
+}
+
+  .cv-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--item-gap, 6px);
+  }
+
+  .cv-item {
+    box-sizing: border-box;
+    padding: var(--item-padding, 4px);
+    border: @item-border;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .cv-item.border {
+    border-color: var(--border-color, transparent);
+    border-radius: 8px;
+  }
+
+  .cv-empty {
+    opacity: 0.7;
+    font-style: italic;
+  }
+
+  .cv-root,
+.cv-root * {
+  cursor: text !important;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.cv-root { position: relative; }  /* menu posicionado relativo ao root */
+
+/* Menu de contexto */
+.cv-menu {
+  position: absolute;
+  z-index: 9999;
+  min-width: 120px;
+  background: #fff;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  box-shadow: 0 8px 16px rgba(0,0,0,.12);
+  padding: 4px 0;
+  display: none;
+}
+
+.cv-menu.show { display: block; }
+
+.cv-menu-item {
+  padding: 6px 12px;
+  cursor: default;    /* não pointer, para não sugerir interação com dados */
+  user-select: none;
+}
+
+.cv-menu-item:hover { background: #f2f2f2; }
+
+/* garante cursor de texto e cópia no visual inteiro */
+.cv-root, .cv-root * {
+  cursor: text !important;
+  -webkit-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text;
+}
