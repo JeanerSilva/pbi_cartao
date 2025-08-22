@@ -1,9 +1,9 @@
 import powerbi from "powerbi-visuals-api";
 export interface TextSettings {
     fontSize: number;
-    color: powerbi.Fill;
     fontFamily: string;
     align: "left" | "center" | "right";
+    color: powerbi.Fill;
 }
 export interface LayoutSettings {
     padding: number;
@@ -14,6 +14,7 @@ export interface LayoutSettings {
 export interface VisualSettings {
     text: TextSettings;
     layout: LayoutSettings;
+    color: powerbi.Fill;
 }
 export declare function getValue<T>(objects: powerbi.DataViewObjects | undefined, objectName: string, propertyName: string, defaultValue: T): T;
 export declare function parseSettings(dataView: powerbi.DataView): VisualSettings;

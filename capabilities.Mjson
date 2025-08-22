@@ -1,0 +1,12 @@
+{
+  "privileges": [],
+  "supportsMultiVisualSelection": true,
+
+  "dataRoles": [
+    {
+      "name": "item",
+      "kind": "Grouping",
+      "displayName": "Itens"
+    }
+  ]
+}

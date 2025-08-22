@@ -2,9 +2,9 @@ import powerbi from "powerbi-visuals-api";
 
 export interface TextSettings {
   fontSize: number;
-  color: powerbi.Fill; // { solid: { color: string } }
   fontFamily: string;
   align: "left" | "center" | "right";
+  color: powerbi.Fill;
 }
 
 export interface LayoutSettings {
@@ -17,6 +17,7 @@ export interface LayoutSettings {
 export interface VisualSettings {
   text: TextSettings;
   layout: LayoutSettings;
+  color: powerbi.Fill;
 }
 
 export function getValue<T>(
@@ -37,9 +38,9 @@ export function parseSettings(dataView: powerbi.DataView): VisualSettings {
 
   const text: TextSettings = {
     fontSize: getValue<number>(objects, "text", "fontSize", 12),
-    color: getValue<powerbi.Fill>(objects, "text", "color", { solid: { color: "#212121" } }),
     fontFamily: getValue<string>(objects, "text", "fontFamily", "Segoe UI, Roboto, Arial, sans-serif"),
-    align: getValue<any>(objects, "text", "align", "left")
+    align: getValue<any>(objects, "text", "align", "left"),
+    color: getValue<powerbi.Fill>(objects, "text", "color", { solid: { color: "#212121" } })
   };
 
   const layout: LayoutSettings = {
@@ -49,5 +50,7 @@ export function parseSettings(dataView: powerbi.DataView): VisualSettings {
     borderColor: getValue<powerbi.Fill>(objects, "layout", "borderColor", { solid: { color: "#C8C8C8" } })
   };
 
-  return { text, layout };
+  const color: powerbi.Fill = getValue<powerbi.Fill>(objects, "color", "default", { solid: { color: "#212121" } });
+
+  return { text, layout, color };
 }

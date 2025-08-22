@@ -1,126 +1,77 @@
 "use strict";
 
-import powerbi from "powerbi-visuals-api";
 import DataView = powerbi.DataView;
 import IViewport = powerbi.IViewport;
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
 import VisualObjectInstance = powerbi.VisualObjectInstance;
 
 import { parseSettings, VisualSettings } from "./settings";
 
 export class Visual implements IVisual {
-  private host: powerbi.extensibility.visual.IVisualHost;
-  private root: HTMLDivElement;
+  private target: HTMLElement;
+  private updateCount: number;
+  private settings: VisualSettings = {} as VisualSettings;
   private list: HTMLElement;
-  private settings!: VisualSettings; // será setado no update()
-  private ctxMenu!: HTMLDivElement;
-  private copyItem!: HTMLDivElement;
-  private _lastContextTarget?: HTMLElement;
+  private host: IVisualHost | undefined;
 
   constructor(options?: VisualConstructorOptions) {
-  // Em runtime, o host passa opções válidas; isto é só para satisfazer o tipo do SDK
-  this.host = (options?.host as any) ?? ({} as any);
-
-  this.root = document.createElement("div");
-  this.root.className = "cv-root";
-  this.root.style.setProperty("--item-gap", "6px");
-  this.root.style.setProperty("--item-padding", "4px");
-  this.root.style.overflowY = "auto";
-  this.root.style.overflowX = "hidden";
-  this.root.style.userSelect = "text";
-
-  // Context menu: deixa o do navegador, bloqueia o do host
-  this.root.addEventListener(
-    "contextmenu",
-    (e) => {
-      e.stopPropagation();
-    },
-    { capture: true }
-  );
-
-  ["click", "dblclick", "mousedown", "mouseup", "pointerdown", "pointerup", "touchstart", "touchend"].forEach((evt) =>
-    this.root.addEventListener(
-      evt,
-      (e) => {
-        e.stopPropagation();
-      },
-      { capture: true }
-    )
-  );
-
-  this.list = document.createElement("div");
-  this.list.className = "cv-list";
-  this.root.appendChild(this.list);
-
-  // Se options existir, anexamos ao DOM do visual (normal)
-  // Se não, seguimos sem anexar (apenas para satisfazer o tipo em build)
-  options?.element?.appendChild?.(this.root);
-}
+    console.log('Visual constructor', options);
+    this.host = options?.host;
+    this.target = options?.element || document.createElement("div");
+    this.updateCount = 0;
+    if (document) {
+      const newDiv: HTMLElement = document.createElement("div");
+      newDiv.className = "rcv-visual";
+      this.list = document.createElement("div");
+      this.list.className = "cv-list";
+      newDiv.appendChild(this.list);
+      this.target.appendChild(newDiv);
+    } else {
+      // Fallback for document not being available (e.g., during testing or non-browser environments)
+      this.list = {} as HTMLElement;
+    }
+  }
 
   public update(options: VisualUpdateOptions) {
-    const dataView = options.dataViews && options.dataViews[0];
-    const viewport: IViewport = options.viewport;
+    this.settings = parseSettings(options.dataViews[0]);
+    console.log('Visual update', options);
 
-    this.root.style.width = viewport.width + "px";
-    this.root.style.height = viewport.height + "px";
+    while (this.list.firstChild) {
+      this.list.removeChild(this.list.firstChild);
+    }
+    let values: any[] = [];
+    let category;
 
-    // ✅ SEMPRE parsear as configurações se houver dataView
-    if (dataView) {
-      this.settings = parseSettings(dataView);
+    if (options.dataViews && options.dataViews[0] && options.dataViews[0].categorical && options.dataViews[0].categorical.categories && options.dataViews[0].categorical.categories[0].values) {
+      category = options.dataViews[0].categorical.categories[0];
+      values = options.dataViews[0].categorical.categories[0].values;
     }
 
-    // Se não há dados categóricos, renderiza “vazio” mas já com settings carregado
-    if (!dataView || !dataView.categorical || !dataView.categorical.categories || dataView.categorical.categories.length === 0) {
-      this.renderEmpty();
-      return;
-    }
+    const textSettings = this.settings.text;
+    const layoutSettings = this.settings.layout;
+    const colorSettings = this.settings.color;
 
-    const category = dataView.categorical.categories[0];
-    const values = category.values;
-
-    // Leitura das configs (sem sobrescrever)
-    const fontSize = ((this.settings?.text?.fontSize ?? 12)) + "px";
-    const color = this.settings?.text?.color?.solid?.color || "#212121";
-    const fontFamily = this.settings?.text?.fontFamily || "Segoe UI, Roboto, Arial, sans-serif";
-    const align = this.settings?.text?.align || "left";
-
-    const itemPadding = (this.settings?.layout?.padding ?? 4) + "px";
-    const itemSpacing = this.settings?.layout?.itemSpacing ?? 6;
-    const showBorder = !!this.settings?.layout?.showBorder;
-    const borderColor = this.settings?.layout?.borderColor?.solid?.color || "#C8C8C8";
-
-    // Limpa lista
-    while (this.list.firstChild) this.list.removeChild(this.list.firstChild as Node);
-
-    // Estilos base aplicados no container
-    this.list.setAttribute("style", [
-      `display:flex`,
-      `flex-direction:column`,
-      `gap:${itemSpacing}px`,
-      `padding:${itemPadding}`,
-      `font-family:${fontFamily}`,
-      `color:${color}`,
-      `text-align:${align}`,
-      `font-size:${fontSize}`
-    ].join(";"));
+    let listStyle = `
+      padding: ${layoutSettings.padding}px;
+      background-color: ${colorSettings?.solid?.color || "transparent"};
+      border: ${layoutSettings.showBorder ? `1px solid ${layoutSettings.borderColor?.solid?.color || "#C8C8C8"}` : "none"};
+    `;
+    this.list.setAttribute("style", listStyle);
 
     // Render dos itens
     for (let i = 0; i < values.length; i++) {
       const text = values[i] == null ? "" : String(values[i]);
       const item = document.createElement("div");
       item.className = "cv-item";
-      item.style.display = "block";
-      item.style.lineHeight = "1.3";
-      item.style.wordBreak = "break-word";
-      item.style.borderWidth = "1px";
-      item.style.borderStyle = "solid";
-      item.style.borderColor = showBorder ? borderColor : "transparent";
-      item.style.userSelect = "text";
-      item.style.cursor = "text";
-
+      item.style.fontSize = textSettings.fontSize + "pt";
+      item.style.fontFamily = textSettings.fontFamily;
+      item.style.textAlign = textSettings.align as any; // Ensure textAlign is applied from settings
+      item.style.color = textSettings.color?.solid?.color || "#212121";
+      item.style.marginBottom = layoutSettings.itemSpacing + "px";
       item.textContent = text;
       this.list.appendChild(item);
 
@@ -130,49 +81,156 @@ export class Visual implements IVisual {
     }
   }
 
-  private renderEmpty() {
-    while (this.list.firstChild) this.list.removeChild(this.list.firstChild as Node);
-    const empty = document.createElement("div");
-    empty.className = "cv-item cv-empty";
-    empty.textContent = "Sem dados";
-    empty.style.userSelect = "text";
-    this.list.appendChild(empty);
+  public getFormattingModel(): powerbi.visuals.FormattingModel {
+    const textSlices: powerbi.visuals.SimpleVisualFormattingSlice[] = [
+      {
+        uid: "fontSize_uid",
+        displayName: "Tamanho da fonte",
+        control: {
+          type: powerbi.visuals.FormattingComponent.NumUpDown,
+          properties: {
+            descriptor: { objectName: "text", propertyName: "fontSize" },
+            value: this.settings?.text?.fontSize
+          }
+        }
+      } as any,
+      {
+        uid: "textColor_uid",
+        displayName: "Cor do texto",
+        control: {
+          type: powerbi.visuals.FormattingComponent.ColorPicker,
+          properties: {
+            descriptor: { objectName: "text", propertyName: "color" },
+            value: { value: this.settings?.text?.color?.solid?.color || "#212121" }
+          }
+        }
+      } as any,
+      {
+        uid: "fontFamily_uid",
+        displayName: "Fonte",
+        control: {
+          type: powerbi.visuals.FormattingComponent.FontPicker,
+          properties: {
+            descriptor: { objectName: "text", propertyName: "fontFamily" },
+            value: this.settings?.text?.fontFamily
+          }
+        }
+      } as any,
+      {
+        uid: "align_uid",
+        displayName: "Alinhamento",
+        control: {
+          type: powerbi.visuals.FormattingComponent.AlignmentGroup,
+          properties: {
+            descriptor: { objectName: "text", propertyName: "align" },
+            value: this.settings?.text?.align,
+            mode: powerbi.visuals.AlignmentGroupMode.Horizonal
+          }
+        }
+      } as any
+    ];
+
+    const textGroup: powerbi.visuals.FormattingGroup = {
+      displayName: "Formato",
+      slices: textSlices,
+      uid: "textGroup_uid"
+    } as any;
+
+    const textCard: powerbi.visuals.FormattingCard = {
+      displayName: "Texto",
+      groups: [textGroup],
+      uid: "textCard_uid"
+    } as any;
+
+    const layoutSlices: powerbi.visuals.SimpleVisualFormattingSlice[] = [
+      {
+        uid: "padding_uid",
+        displayName: "Padding",
+        control: {
+          type: powerbi.visuals.FormattingComponent.NumUpDown,
+          properties: {
+            descriptor: { objectName: "layout", propertyName: "padding" },
+            value: this.settings?.layout?.padding
+          }
+        }
+      } as any,
+      {
+        uid: "itemSpacing_uid",
+        displayName: "Espaçamento entre itens",
+        control: {
+          type: powerbi.visuals.FormattingComponent.NumUpDown,
+          properties: {
+            descriptor: { objectName: "layout", propertyName: "itemSpacing" },
+            value: this.settings?.layout?.itemSpacing
+          }
+        }
+      } as any,
+      {
+        uid: "showBorder_uid",
+        displayName: "Borda",
+        control: {
+          type: powerbi.visuals.FormattingComponent.ToggleSwitch,
+          properties: {
+            descriptor: { objectName: "layout", propertyName: "showBorder" },
+            value: this.settings?.layout?.showBorder
+          }
+        }
+      } as any,
+      {
+        uid: "borderColor_uid",
+        displayName: "Cor da borda",
+        control: {
+          type: powerbi.visuals.FormattingComponent.ColorPicker,
+          properties: {
+            descriptor: { objectName: "layout", propertyName: "borderColor" },
+            value: { value: this.settings?.layout?.borderColor?.solid?.color || "#C8C8C8" }
+          }
+        }
+      } as any
+    ];
+
+    const layoutGroup: powerbi.visuals.FormattingGroup = {
+      displayName: "Configurações de Layout",
+      slices: layoutSlices,
+      uid: "layoutGroup_uid"
+    } as any;
+
+    const layoutCard: powerbi.visuals.FormattingCard = {
+      displayName: "Layout",
+      groups: [layoutGroup],
+      uid: "layoutCard_uid"
+    } as any;
+
+    const colorSlices: powerbi.visuals.SimpleVisualFormattingSlice[] = [
+      {
+        uid: "defaultColor_uid",
+        displayName: "Cor",
+        control: {
+          type: powerbi.visuals.FormattingComponent.ColorPicker,
+          properties: {
+            descriptor: { objectName: "color", propertyName: "default" },
+            value: { value: this.settings?.color?.solid?.color || "#212121" }
+          }
+        }
+      } as any
+    ];
+
+    const colorGroup: powerbi.visuals.FormattingGroup = {
+      displayName: "Cor",
+      slices: colorSlices,
+      uid: "colorGroup_uid"
+    } as any;
+
+    const colorCard: powerbi.visuals.FormattingCard = {
+      displayName: "Cor",
+      groups: [colorGroup],
+      uid: "colorCard_uid"
+    } as any;
+
+    const formattingModel: powerbi.visuals.FormattingModel = {
+      cards: [textCard, layoutCard, colorCard]
+    } as any;
+
+    return formattingModel;
   }
-
-  public enumerateObjectInstances(
-  options: EnumerateVisualObjectInstancesOptions
-): VisualObjectInstance[] {
-  const instances: VisualObjectInstance[] = [];
-  const s = this.settings;
-
-  if (options.objectName === "text") {
-    instances.push({
-      objectName: "text",
-      properties: {
-        fontSize: s?.text?.fontSize ?? 12,
-        color: s?.text?.color ?? { solid: { color: "#212121" } },
-        fontFamily: s?.text?.fontFamily ?? "Segoe UI, Roboto, Arial, sans-serif",
-        align: s?.text?.align ?? "left",
-      },
-      // SDK exige 'selector'; para escopo do visual use undefined (hack seguro)
-      selector: undefined as any,
-    } as any);
-  }
-
-  if (options.objectName === "layout") {
-    instances.push({
-      objectName: "layout",
-      properties: {
-        padding: s?.layout?.padding ?? 4,
-        itemSpacing: s?.layout?.itemSpacing ?? 6,
-        showBorder: s?.layout?.showBorder ?? false,
-        borderColor: s?.layout?.borderColor ?? { solid: { color: "#C8C8C8" } },
-      },
-      selector: undefined as any,
-    } as any);
-  }
-
-  return instances;
-} // <= fecha o método, não a classe
-// (depois disto, só vem o fechamento da classe)
 }

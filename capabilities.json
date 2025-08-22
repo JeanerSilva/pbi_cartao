@@ -1,5 +1,6 @@
 {
   "privileges": [],
+  "supportsMultiVisualSelection": true,
 
   "dataRoles": [
     {
@@ -49,9 +50,9 @@
           }
         },
         "align": {
-        "displayName": "Alinhamento",
-        "type": { "formatting": { "alignment": true } }
-      }
+          "displayName": "Alinhamento",
+          "type": { "formatting": { "alignment": true } }
+        }
 
       }
     },
@@ -78,6 +79,21 @@
         },
         "borderColor": {
           "displayName": "Cor da borda",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "color": {
+      "displayName": "Cor",
+      "properties": {
+        "default": {
+          "displayName": "Cor",
           "type": {
             "fill": {
               "solid": {
