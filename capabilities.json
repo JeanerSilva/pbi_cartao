@@ -49,9 +49,9 @@
           }
         },
         "align": {
-          "displayName": "Alinhamento",
-          "type": { "formatting": { "alignment": true } }
-        }
+        "displayName": "Alinhamento",
+        "type": { "formatting": { "alignment": true } }
+      }
 
       }
     },
